@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# REIS — Тактический Морской Бой
 
-## Getting Started
+> *Для капитанов Каспия и всего СНГ.*
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Что это такое?
+
+REIS — это современная соревновательная игра в морской бой для игроков Казахстана и стран СНГ. Не ностальгический клон — а полноценная тактическая игра с рейтинговой системой, живым лидербордом, мультиплеером в реальном времени и ИИ-тренером, который разбирает каждый матч.
+
+Название — от казахского/тюркского слова **капитан**. Именно для них.
+
+---
+
+## Для кого?
+
+Для тех, кто рос, играя в Морской бой на бумаге на уроках, на калькуляторах, на старых телефонах — и хочет получить что-то, что уважает глубину игры и при этом ощущается по-настоящему современным.
+
+Лидерборд построен по городам: ты соревнуешься не только глобально, но и внутри своего города. Видно, кто лучший капитан в Алматы или Астане. Это важно.
+
+---
+
+## Почему это ценно?
+
+Большинство игр в морской бой на рынке — либо примитивные клоны без глубины, либо западные продукты без какой-либо связи с культурой СНГ.
+
+REIS — ни то, ни другое. Здесь есть ИИ на основе теории вероятностей, который реально умеет играть. ELO-система, где твой рейтинг что-то значит. Пост-матчевый тренер, который объясняет *почему* ты проиграл — а не просто *что* ты проиграл.
+
+---
+
+## Технологии
+
+```
+Next.js 16 · TypeScript · Supabase · Tailwind CSS · Zustand · Framer Motion
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Supabase** — авторизация (email + OTP-код), база данных, политики безопасности RLS
+- **Вероятностный ИИ** — бот считает плотность вероятности по всему полю, а не стреляет случайно
+- **ELO-рейтинг** — рейтинг меняется после каждой игры с ботом или живым противником
+- **Городской лидерборд** — соревнование на уровне города, страны и глобально
+- **ИИ-тренер** — анализирует паттерн выстрелов, агрессию, точность и даёт тактические рекомендации
+- **PWA** — устанавливается как приложение на телефон
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Дизайн
 
-## Learn More
+Интерфейс создавался с ощущением радарного дисплея военного корабля ночью. Тёмная морская сетка, металлические силуэты кораблей, красное свечение при попадании, янтарное — при потоплении. Координаты A–J × 1–10, военный стиль. Каждое взаимодействие имеет вес.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Статус проекта
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Проект работает и играбелен. При этом я отчётливо понимаю, что нужно улучшить и как именно — архитектура синхронизации данных, глубина мультиплеера, мобильная адаптация, расширение локализации и ряд других вещей. Единственное ограничение на данный момент — время. Направление понятно, руки дойдут.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*REIS — Морской бой для СНГ.*
