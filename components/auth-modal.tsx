@@ -1,11 +1,29 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import { X, Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { X, Loader2, Mail, Lock, User, Eye, EyeOff, Anchor } from "lucide-react";
 import { createClient } from "@/supabase/client";
 import { getProfile, syncToSupabase } from "@/lib/profile-service";
 
 type View = "signin" | "signup" | "verify";
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "10px 12px 10px 36px",
+  background: "#1A150F",
+  border: "1px solid rgba(63,50,40,0.9)",
+  borderRadius: "6px",
+  color: "#F5EDE0",
+  fontSize: "13px",
+  outline: "none",
+  fontFamily: "inherit",
+  boxSizing: "border-box" as const,
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: "11px", fontFamily: "monospace", fontWeight: 700,
+  letterSpacing: "0.15em", textTransform: "uppercase" as const,
+  color: "#9A8A68", marginBottom: "4px", display: "block",
+};
 
 export function AuthModal({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<View>("signin");
@@ -14,7 +32,7 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -22,7 +40,15 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
   const supabase = createClient();
   const clear = () => { setError(null); setInfo(null); };
 
-  const inputCls = "w-full rounded-xl border border-[#C9AA88] bg-[#F8F1E9] py-2.5 pl-9 pr-4 text-sm text-[#2C1A0E] placeholder-[#B8A080] focus:border-[#8B5A2B] focus:outline-none";
+  const Field = ({ label, icon: Icon, value, onChange, type = "text", placeholder }: any) => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ position: "relative" }}>
+        <Icon style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#9A8A68" }} />
+        <input type={type} value={value} onChange={(e: any) => onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
+      </div>
+    </div>
+  );
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault(); clear();
@@ -33,8 +59,7 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
     const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName.trim() } } });
     setLoading(false);
     if (error) { setError(error.message); return; }
-    setView("verify");
-    setInfo("Код отправлен на вашу почту.");
+    setView("verify"); setInfo("Код подтверждения отправлен на ваш email.");
   };
 
   const handleSignin = async (e: FormEvent) => {
@@ -64,39 +89,72 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
     error ? setError(error.message) : setInfo("Новый код отправлен!");
   };
 
-  const FieldIcon = ({ icon: Icon }: { icon: typeof Mail }) => (
-    <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8A080]" />
-  );
+  const panelStyle: React.CSSProperties = {
+    position: "relative",
+    width: "100%", maxWidth: "420px",
+    background: "rgba(37,32,26,0.98)",
+    border: "1px solid rgba(212,183,143,0.12)",
+    borderRadius: "12px",
+    padding: "28px",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(212,183,143,0.07)",
+  };
+
+  const primaryBtn: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+    width: "100%", padding: "11px",
+    background: loading ? "rgba(15,122,138,0.4)" : "linear-gradient(135deg, #0A5C6B, #0F7A8A)",
+    border: "none", borderRadius: "7px",
+    color: "#F5EDE0",
+    fontFamily: "monospace", fontWeight: 800, letterSpacing: "0.15em",
+    fontSize: "11px", textTransform: "uppercase" as const,
+    cursor: loading ? "not-allowed" : "pointer",
+    boxShadow: loading ? "none" : "0 0 14px rgba(15,122,138,0.3)",
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#2C1A0E]/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-2xl border border-[#C9AA88] bg-[#F0E6D8] p-6 shadow-2xl">
-        <button onClick={onClose} className="absolute right-4 top-4 text-[#9E7B5A] hover:text-[#2C1A0E]" aria-label="Close">
-          <X className="h-5 w-5" />
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "16px",
+    }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }} onClick={onClose} />
+      <div style={panelStyle}>
+        <button onClick={onClose} style={{ position: "absolute", right: "16px", top: "16px", background: "none", border: "none", color: "#9A8A68", cursor: "pointer", padding: "4px" }}>
+          <X style={{ width: "16px", height: "16px" }} />
         </button>
+
+        {/* Brand mark */}
+        <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "20px" }}>
+          <Anchor style={{ width: "14px", height: "14px", color: "#0F7A8A" }} />
+          <span style={{ fontFamily: "monospace", fontWeight: 800, letterSpacing: "0.2em", fontSize: "12px", color: "#D4B78F" }}>REIS</span>
+        </div>
 
         {view === "signin" && (
           <>
-            <h2 className="mb-1 text-xl font-extrabold text-[#2C1A0E]">Вход в аккаунт</h2>
-            <p className="mb-5 text-sm text-[#8B6B4A]">
+            <p style={{ ...labelStyle, marginBottom: "2px" }}>Командный доступ</p>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#D4B78F", marginBottom: "4px" }}>Вход</h2>
+            <p style={{ fontSize: "11px", color: "#9A8A68", marginBottom: "18px" }}>
               Нет аккаунта?{" "}
-              <button className="font-semibold text-[#8B5A2B] hover:underline" onClick={() => { clear(); setView("signup"); }}>
-                Зарегистрироваться
+              <button onClick={() => { clear(); setView("signup"); }} style={{ background: "none", border: "none", color: "#0F7A8A", cursor: "pointer", fontFamily: "monospace", fontSize: "11px", fontWeight: 700 }}>
+                Регистрация
               </button>
             </p>
-            <form onSubmit={handleSignin} className="space-y-3">
-              <div className="relative"><FieldIcon icon={Mail} /><input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} /></div>
-              <div className="relative">
-                <FieldIcon icon={Lock} />
-                <input type={showPassword ? "text" : "password"} required placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputCls} pr-10`} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B8A080]">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            <form onSubmit={handleSignin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <Field label="Email" icon={Mail} value={email} onChange={setEmail} type="email" placeholder="captain@fleet.kz" />
+              <div>
+                <label style={labelStyle}>Пароль</label>
+                <div style={{ position: "relative" }}>
+                  <Lock style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#9A8A68" }} />
+                  <input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingRight: "36px" }} />
+                  <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#9A8A68", cursor: "pointer" }}>
+                    {showPw ? <EyeOff style={{ width: "13px", height: "13px" }} /> : <Eye style={{ width: "13px", height: "13px" }} />}
+                  </button>
+                </div>
               </div>
-              {error && <p className="rounded-xl bg-[#8B2B2B]/10 px-3 py-2 text-xs text-[#8B2B2B]">{error}</p>}
-              <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8B5A2B] py-2.5 text-sm font-bold text-[#F5EDE4] transition hover:bg-[#6B4020] disabled:opacity-60">
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Войти
+              {error && <p style={{ fontSize: "11px", color: "#FF8A8A", background: "rgba(139,34,34,0.2)", border: "1px solid rgba(255,77,77,0.2)", borderRadius: "5px", padding: "7px 10px" }}>{error}</p>}
+              <button type="submit" disabled={loading} style={primaryBtn}>
+                {loading && <Loader2 style={{ width: "13px", height: "13px", animation: "spin 1s linear infinite" }} />}
+                Войти
               </button>
             </form>
           </>
@@ -104,28 +162,39 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
 
         {view === "signup" && (
           <>
-            <h2 className="mb-1 text-xl font-extrabold text-[#2C1A0E]">Создать аккаунт</h2>
-            <p className="mb-5 text-sm text-[#8B6B4A]">
+            <p style={{ ...labelStyle, marginBottom: "2px" }}>Новый офицер</p>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#D4B78F", marginBottom: "4px" }}>Регистрация</h2>
+            <p style={{ fontSize: "11px", color: "#9A8A68", marginBottom: "18px" }}>
               Уже есть аккаунт?{" "}
-              <button className="font-semibold text-[#8B5A2B] hover:underline" onClick={() => { clear(); setView("signin"); }}>
+              <button onClick={() => { clear(); setView("signin"); }} style={{ background: "none", border: "none", color: "#0F7A8A", cursor: "pointer", fontFamily: "monospace", fontSize: "11px", fontWeight: 700 }}>
                 Войти
               </button>
             </p>
-            <form onSubmit={handleSignup} className="space-y-3">
-              <div className="relative"><FieldIcon icon={User} /><input type="text" required placeholder="Полное имя" value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputCls} /></div>
-              <div className="relative"><FieldIcon icon={Mail} /><input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} /></div>
-              <div className="relative">
-                <FieldIcon icon={Lock} />
-                <input type={showPassword ? "text" : "password"} required placeholder="Пароль (мин. 6 символов)" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputCls} pr-10`} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B8A080]">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <Field label="Полное имя" icon={User} value={fullName} onChange={setFullName} placeholder="Иван Капитанов" />
+              <Field label="Email" icon={Mail} value={email} onChange={setEmail} type="email" placeholder="captain@fleet.kz" />
+              <div>
+                <label style={labelStyle}>Пароль</label>
+                <div style={{ position: "relative" }}>
+                  <Lock style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#9A8A68" }} />
+                  <input type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Мин. 6 символов" style={{ ...inputStyle, paddingRight: "36px" }} />
+                  <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#9A8A68", cursor: "pointer" }}>
+                    {showPw ? <EyeOff style={{ width: "13px", height: "13px" }} /> : <Eye style={{ width: "13px", height: "13px" }} />}
+                  </button>
+                </div>
               </div>
-              <div className="relative"><FieldIcon icon={Lock} /><input type={showPassword ? "text" : "password"} required placeholder="Подтвердите пароль" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputCls} /></div>
-              {error && <p className="rounded-xl bg-[#8B2B2B]/10 px-3 py-2 text-xs text-[#8B2B2B]">{error}</p>}
-              {info  && <p className="rounded-xl bg-[#6B8B2B]/10 px-3 py-2 text-xs text-[#3A5A0E]">{info}</p>}
-              <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8B5A2B] py-2.5 text-sm font-bold text-[#F5EDE4] transition hover:bg-[#6B4020] disabled:opacity-60">
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Создать аккаунт
+              <div>
+                <label style={labelStyle}>Подтвердите пароль</label>
+                <div style={{ position: "relative" }}>
+                  <Lock style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#9A8A68" }} />
+                  <input type={showPw ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
+                </div>
+              </div>
+              {error && <p style={{ fontSize: "11px", color: "#FF8A8A", background: "rgba(139,34,34,0.2)", border: "1px solid rgba(255,77,77,0.2)", borderRadius: "5px", padding: "7px 10px" }}>{error}</p>}
+              {info  && <p style={{ fontSize: "11px", color: "#7AC8D8", background: "rgba(10,92,107,0.2)", border: "1px solid rgba(15,122,138,0.3)", borderRadius: "5px", padding: "7px 10px" }}>{info}</p>}
+              <button type="submit" disabled={loading} style={primaryBtn}>
+                {loading && <Loader2 style={{ width: "13px", height: "13px", animation: "spin 1s linear infinite" }} />}
+                Создать аккаунт
               </button>
             </form>
           </>
@@ -133,29 +202,36 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
 
         {view === "verify" && (
           <>
-            <h2 className="mb-1 text-xl font-extrabold text-[#2C1A0E]">Подтверждение email</h2>
-            <p className="mb-5 text-sm text-[#8B6B4A]">
-              Введите 6-значный код, отправленный на <span className="font-semibold text-[#2C1A0E]">{email}</span>
+            <p style={{ ...labelStyle, marginBottom: "2px" }}>Верификация</p>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#D4B78F", marginBottom: "4px" }}>Код подтверждения</h2>
+            <p style={{ fontSize: "11px", color: "#9A8A68", marginBottom: "18px" }}>
+              6-значный код отправлен на <span style={{ color: "#D4B78F", fontFamily: "monospace" }}>{email}</span>
             </p>
-            <form onSubmit={handleVerify} className="space-y-3">
+            <form onSubmit={handleVerify} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{6}"
-                maxLength={6}
-                required
+                type="text" inputMode="numeric" maxLength={6} required
                 placeholder="000000"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="w-full rounded-xl border border-[#C9AA88] bg-[#F8F1E9] py-3 text-center text-3xl font-bold tracking-[0.5em] text-[#2C1A0E] placeholder-[#C9AA88] focus:border-[#8B5A2B] focus:outline-none"
+                style={{
+                  width: "100%", padding: "14px 8px",
+                  background: "#1A150F",
+                  border: "1px solid rgba(63,50,40,0.9)",
+                  borderRadius: "8px",
+                  color: "#E8C97F",
+                  fontSize: "28px", fontFamily: "monospace", fontWeight: 800,
+                  letterSpacing: "0.6em", textAlign: "center",
+                  outline: "none", boxSizing: "border-box" as const,
+                }}
               />
-              {error && <p className="rounded-xl bg-[#8B2B2B]/10 px-3 py-2 text-xs text-[#8B2B2B]">{error}</p>}
-              {info  && <p className="rounded-xl bg-[#6B8B2B]/10 px-3 py-2 text-xs text-[#3A5A0E]">{info}</p>}
-              <button type="submit" disabled={loading || otp.length !== 6} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8B5A2B] py-2.5 text-sm font-bold text-[#F5EDE4] transition hover:bg-[#6B4020] disabled:opacity-60">
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Подтвердить и войти
+              {error && <p style={{ fontSize: "11px", color: "#FF8A8A", background: "rgba(139,34,34,0.2)", border: "1px solid rgba(255,77,77,0.2)", borderRadius: "5px", padding: "7px 10px" }}>{error}</p>}
+              {info  && <p style={{ fontSize: "11px", color: "#7AC8D8", background: "rgba(10,92,107,0.2)", border: "1px solid rgba(15,122,138,0.3)", borderRadius: "5px", padding: "7px 10px" }}>{info}</p>}
+              <button type="submit" disabled={loading || otp.length !== 6} style={{ ...primaryBtn, opacity: otp.length !== 6 ? 0.5 : 1 }}>
+                {loading && <Loader2 style={{ width: "13px", height: "13px", animation: "spin 1s linear infinite" }} />}
+                Подтвердить
               </button>
-              <button type="button" onClick={handleResend} disabled={loading} className="w-full text-center text-xs text-[#9E7B5A] hover:text-[#8B5A2B] disabled:opacity-50">
-                Не пришёл код? Отправить снова
+              <button type="button" onClick={handleResend} disabled={loading} style={{ background: "none", border: "none", color: "#9A8A68", fontSize: "10px", fontFamily: "monospace", cursor: "pointer", padding: "4px", textAlign: "center" }}>
+                Не пришёл код? Отправить повторно
               </button>
             </form>
           </>

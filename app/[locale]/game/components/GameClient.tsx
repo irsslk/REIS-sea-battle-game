@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { RotateCcw, Shuffle, Swords, Users } from "lucide-react";
+import { RotateCcw, Shuffle, Swords, Users, Target } from "lucide-react";
 
 import { useGameStore } from "@/context/game-store";
 import { Locale } from "@/lib/i18n";
-import { BotLevel, CellMark, ShipKind, PlacedShip } from "@/lib/game-logic";
+import { BotLevel, ShipKind } from "@/lib/game-logic";
 import { buildProbabilityHeatmap } from "@/lib/probability-ai";
 import { KAZAKH_CITIES, getProfile, recordMatchResult, setCity } from "@/lib/profile-service";
 
@@ -16,73 +16,93 @@ import { Board } from "./Board";
 import { MultiplayerGameClient } from "./MultiplayerGameClient";
 import { PostGameCoach } from "./PostGameCoach";
 
-// ─── Ship SVG Icons ──────────────────────────────────────────────────────────
+// ─── Ship SVG Icons (teal metallic style) ────────────────────────────────────
 
 const TengriIcon = () => (
   <svg viewBox="0 0 128 22" fill="none" className="w-full h-auto">
-    <path d="M3 17 L11 10 L117 10 L125 17 L117 20 L11 20Z" fill="#2C4A7A"/>
-    <rect x="56" y="5" width="24" height="5" rx="1" fill="#3A5A8A"/>
-    <rect x="61" y="2" width="14" height="3" rx="1" fill="#4A6AA0"/>
-    <rect x="22" y="7" width="20" height="4" rx="1" fill="#3A5A8A"/>
-    <line x1="22" y1="9" x2="11" y2="9" stroke="#3A5A8A" strokeWidth="2.5" strokeLinecap="round"/>
-    <rect x="86" y="7" width="20" height="4" rx="1" fill="#3A5A8A"/>
-    <line x1="106" y1="9" x2="117" y2="9" stroke="#3A5A8A" strokeWidth="2.5" strokeLinecap="round"/>
-    <line x1="11" y1="16" x2="117" y2="16" stroke="#C8A86B" strokeWidth="0.8" opacity="0.6"/>
-    <path d="M3 17 L11 10" stroke="#C8A86B" strokeWidth="1" opacity="0.8"/>
-    <path d="M125 17 L117 10" stroke="#C8A86B" strokeWidth="1" opacity="0.8"/>
+    <path d="M3 17 L11 10 L117 10 L125 17 L117 20 L11 20Z" fill="#0A5C6B"/>
+    <path d="M3 17 L11 10 L11 20Z" fill="#0F7A8A" opacity="0.6"/>
+    <path d="M125 17 L117 10 L117 20Z" fill="#0F7A8A" opacity="0.6"/>
+    <rect x="56" y="5" width="24" height="5" rx="1" fill="#0F7A8A"/>
+    <rect x="61" y="2" width="14" height="3" rx="1" fill="#1AAFBF" opacity="0.8"/>
+    <rect x="22" y="7" width="20" height="4" rx="1" fill="#0F7A8A"/>
+    <line x1="22" y1="9" x2="11" y2="9" stroke="#1AAFBF" strokeWidth="2" strokeLinecap="round" opacity="0.9"/>
+    <rect x="86" y="7" width="20" height="4" rx="1" fill="#0F7A8A"/>
+    <line x1="106" y1="9" x2="117" y2="9" stroke="#1AAFBF" strokeWidth="2" strokeLinecap="round" opacity="0.9"/>
+    <line x1="11" y1="16" x2="117" y2="16" stroke="#D4B78F" strokeWidth="0.7" opacity="0.4"/>
+    <rect x="67" y="1" width="3" height="1.5" fill="#D4B78F" opacity="0.5"/>
   </svg>
 );
 
 const BerkutIcon = () => (
   <svg viewBox="0 0 96 22" fill="none" className="w-full h-auto">
-    <path d="M3 17 L10 10 L86 10 L93 17 L86 20 L10 20Z" fill="#2C4A7A"/>
-    <rect x="44" y="4" width="20" height="6" rx="1" fill="#3A5A8A"/>
-    <rect x="48" y="2" width="12" height="3" rx="1" fill="#4A6AA0"/>
-    <rect x="18" y="7" width="18" height="4" rx="1" fill="#3A5A8A"/>
-    <line x1="18" y1="9" x2="10" y2="9" stroke="#3A5A8A" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="10" y1="16" x2="86" y2="16" stroke="#C8A86B" strokeWidth="0.8" opacity="0.6"/>
-    <path d="M3 17 L10 10" stroke="#C8A86B" strokeWidth="1" opacity="0.8"/>
-    <path d="M93 17 L86 10" stroke="#C8A86B" strokeWidth="1" opacity="0.8"/>
+    <path d="M3 17 L10 10 L86 10 L93 17 L86 20 L10 20Z" fill="#0A5C6B"/>
+    <path d="M3 17 L10 10 L10 20Z" fill="#0F7A8A" opacity="0.6"/>
+    <path d="M93 17 L86 10 L86 20Z" fill="#0F7A8A" opacity="0.6"/>
+    <rect x="44" y="4" width="20" height="6" rx="1" fill="#0F7A8A"/>
+    <rect x="48" y="2" width="12" height="3" rx="1" fill="#1AAFBF" opacity="0.8"/>
+    <rect x="18" y="7" width="18" height="4" rx="1" fill="#0F7A8A"/>
+    <line x1="18" y1="9" x2="10" y2="9" stroke="#1AAFBF" strokeWidth="2" strokeLinecap="round" opacity="0.9"/>
+    <line x1="10" y1="16" x2="86" y2="16" stroke="#D4B78F" strokeWidth="0.7" opacity="0.4"/>
   </svg>
 );
 
 const ZhalauIcon = () => (
   <svg viewBox="0 0 64 22" fill="none" className="w-full h-auto">
-    <path d="M3 17 L10 10 L54 10 L61 17 L54 20 L10 20Z" fill="#2C4A7A"/>
-    <rect x="28" y="5" width="15" height="5" rx="1" fill="#3A5A8A"/>
-    <rect x="31" y="3" width="9" height="3" rx="1" fill="#4A6AA0"/>
-    <line x1="10" y1="16" x2="54" y2="16" stroke="#C8A86B" strokeWidth="0.8" opacity="0.6"/>
-    <path d="M3 17 L10 10" stroke="#C8A86B" strokeWidth="1" opacity="0.8"/>
-    <path d="M61 17 L54 10" stroke="#C8A86B" strokeWidth="1" opacity="0.8"/>
+    <path d="M3 17 L10 10 L54 10 L61 17 L54 20 L10 20Z" fill="#0A5C6B"/>
+    <path d="M3 17 L10 10 L10 20Z" fill="#0F7A8A" opacity="0.6"/>
+    <path d="M61 17 L54 10 L54 20Z" fill="#0F7A8A" opacity="0.6"/>
+    <rect x="28" y="5" width="15" height="5" rx="1" fill="#0F7A8A"/>
+    <rect x="31" y="3" width="9" height="3" rx="1" fill="#1AAFBF" opacity="0.8"/>
+    <line x1="10" y1="16" x2="54" y2="16" stroke="#D4B78F" strokeWidth="0.7" opacity="0.4"/>
   </svg>
 );
 
 const SunkarIcon = () => (
   <svg viewBox="0 0 32 22" fill="none" className="w-full h-auto">
-    <ellipse cx="16" cy="15" rx="12" ry="5" fill="#2C4A7A"/>
-    <rect x="11" y="8" width="10" height="7" rx="1" fill="#3A5A8A"/>
-    <rect x="13" y="5" width="6" height="4" rx="1" fill="#4A6AA0"/>
-    <line x1="16" y1="3" x2="16" y2="5" stroke="#C8A86B" strokeWidth="1.5" strokeLinecap="round"/>
-    <ellipse cx="16" cy="18" rx="10" ry="2" stroke="#C8A86B" strokeWidth="0.6" opacity="0.5" fill="none"/>
+    <ellipse cx="16" cy="15" rx="12" ry="5" fill="#0A5C6B"/>
+    <rect x="11" y="8" width="10" height="7" rx="1" fill="#0F7A8A"/>
+    <rect x="13" y="5" width="6" height="4" rx="1" fill="#1AAFBF" opacity="0.8"/>
+    <line x1="16" y1="3" x2="16" y2="5" stroke="#D4B78F" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+    <ellipse cx="16" cy="18" rx="10" ry="1.5" stroke="#D4B78F" strokeWidth="0.5" opacity="0.3" fill="none"/>
   </svg>
 );
 
 const SHIP_ICONS: Record<ShipKind, React.FC> = {
-  tengri: TengriIcon,
-  berkut: BerkutIcon,
-  zhalau: ZhalauIcon,
-  sunkar: SunkarIcon,
+  tengri: TengriIcon, berkut: BerkutIcon, zhalau: ZhalauIcon, sunkar: SunkarIcon,
 };
 
 // ─── Bot difficulty ───────────────────────────────────────────────────────────
 
-const botOptions: Array<{ label: string; value: BotLevel }> = [
-  { label: "Лёгкий", value: "easy" },
-  { label: "Средний", value: "medium" },
-  { label: "Сложный", value: "hard" },
+const BOT_OPTIONS: Array<{ label: string; value: BotLevel }> = [
+  { label: "ЛЁГКИЙ", value: "easy" },
+  { label: "СРЕДНИЙ", value: "medium" },
+  { label: "СЛОЖНЫЙ", value: "hard" },
 ];
 
-// ─── Solo game ────────────────────────────────────────────────────────────────
+// ─── Panel style helpers ──────────────────────────────────────────────────────
+
+const panelStyle: React.CSSProperties = {
+  background: "rgba(44,36,27,0.92)",
+  border: "1px solid rgba(212,183,143,0.12)",
+  borderRadius: "10px",
+  boxShadow: "inset 0 1px 0 rgba(212,183,143,0.07), 0 4px 20px rgba(0,0,0,0.5)",
+  backdropFilter: "blur(8px)",
+};
+
+const panelHeaderStyle: React.CSSProperties = {
+  padding: "6px 12px",
+  borderBottom: "1px solid rgba(63,50,40,0.8)",
+  background: "rgba(28,24,20,0.7)",
+  fontSize: "11px",
+  fontWeight: 700,
+  fontFamily: "monospace",
+  letterSpacing: "0.15em",
+  textTransform: "uppercase" as const,
+  color: "#B0A080",
+};
+
+// ─── Solo Game ────────────────────────────────────────────────────────────────
 
 const SoloGameClient = ({ locale }: { locale: Locale }) => {
   const [dragShipId, setDragShipId] = useState<string | null>(null);
@@ -108,24 +128,16 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
   const botFleet    = useMemo(() => ships.filter((s) =>  s.instanceId.startsWith("bot-")), [ships]);
   const allPlaced   = playerFleet.every((s) => s.isPlaced);
 
-  const botRemainingKinds  = useMemo(() => botFleet.filter((s) => s.hitKeys.length < s.size).map((s) => s.kind),    [botFleet]);
+  const botRemainingKinds    = useMemo(() => botFleet.filter((s) => s.hitKeys.length < s.size).map((s) => s.kind), [botFleet]);
   const playerRemainingKinds = useMemo(() => playerFleet.filter((s) => s.hitKeys.length < s.size).map((s) => s.kind), [playerFleet]);
 
-  // Heatmap only used post-game
-  const playerAimHeatmap = useMemo(
-    () => buildProbabilityHeatmap(botShots, botRemainingKinds),
-    [botShots, botRemainingKinds],
-  );
-
   useEffect(() => { setLocale(locale); }, [locale, setLocale]);
-
   useEffect(() => {
     if (phase === "battle" && !playerTurn && !winner) {
       const t = setTimeout(() => botTurn(), 500);
       return () => clearTimeout(t);
     }
   }, [phase, playerTurn, winner, botTurn]);
-
   useEffect(() => {
     if (phase === "game-over" && !recordedRef.current && coachReport) {
       recordMatchResult({ won: winner === "player", accuracy: coachReport.accuracy, mode: "bot", coachReport }).catch(() => null);
@@ -141,18 +153,45 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
     try { await setCity(val); setCitySaved(true); } catch {}
   };
 
+  const phaseLabel =
+    phase === "placement" ? "РАССТАНОВКА ФЛОТА" :
+    phase === "battle" ? (playerTurn ? "⚔ ВАШ ХОД" : isBotThinking ? "ПРОТИВНИК ДУМАЕТ…" : "ХОД ПРОТИВНИКА") :
+    winner === "player" ? "✦ ПОБЕДА — ФЛОТ УНИЧТОЖЕН" : "✦ ПОРАЖЕНИЕ — ФЛОТ РАЗГРОМЛЕН";
+
+  const phaseColor =
+    phase === "game-over" ? (winner === "player" ? "#0F7A8A" : "#FF4D4D") :
+    phase === "battle" && playerTurn ? "#E8C97F" : "#8A7A6A";
+
   return (
-    <main className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-[#EDE0CC] to-[#DDD0B8] p-4">
+    <main style={{
+      minHeight: "calc(100vh - 52px)",
+      background: "radial-gradient(ellipse at 25% 15%, #0D1A22 0%, #1C1814 55%, #130E0A 100%)",
+      padding: "14px",
+    }}>
       {/* City modal */}
       {!citySaved && (
-        <div className="fixed inset-0 z-30 grid place-items-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#C9AA88] bg-[#F0E6D8] p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-[#5A3A1A]">Выберите ваш город</h3>
-            <p className="mt-1 text-sm text-[#8B6B4A]">Для участия в городском лидерборде</p>
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 30,
+          display: "grid", placeItems: "center",
+          background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)",
+          padding: "16px",
+        }}>
+          <div style={{ ...panelStyle, width: "100%", maxWidth: "420px", padding: "24px" }}>
+            <p style={{ fontSize: "11px", fontFamily: "monospace", letterSpacing: "0.15em", color: "#B0A080", marginBottom: "4px" }}>ИДЕНТИФИКАЦИЯ</p>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#D4B78F", marginBottom: "16px" }}>Выберите ваш город</h3>
             <select
               value={city}
               onChange={(e) => setCityState(e.target.value)}
-              className="mt-3 w-full rounded-xl border border-[#C9AA88] bg-[#F8F1E9] px-3 py-2 text-[#2C1A0E] focus:outline-none"
+              style={{
+                width: "100%", padding: "10px 12px",
+                background: "#1A150F",
+                border: "1px solid rgba(63,50,40,0.9)",
+                borderRadius: "6px",
+                color: "#F5EDE0",
+                fontSize: "13px",
+                outline: "none",
+              }}
             >
               <option value="">— Выберите —</option>
               {KAZAKH_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -163,15 +202,32 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
                 value={customCity}
                 onChange={(e) => setCustomCity(e.target.value)}
                 placeholder="Введите город"
-                className="mt-2 w-full rounded-xl border border-[#C9AA88] bg-[#F8F1E9] px-3 py-2 text-[#2C1A0E] focus:outline-none"
+                style={{
+                  width: "100%", marginTop: "8px", padding: "10px 12px",
+                  background: "#1A150F",
+                  border: "1px solid rgba(63,50,40,0.9)",
+                  borderRadius: "6px",
+                  color: "#F5EDE0",
+                  fontSize: "13px",
+                  outline: "none",
+                }}
               />
             )}
             <button
               onClick={saveCity}
               type="button"
-              className="mt-4 w-full rounded-xl bg-[#8B5A2B] py-2.5 font-bold text-[#F5EDE4] hover:bg-[#6B4020] transition"
+              style={{
+                width: "100%", marginTop: "12px", padding: "11px",
+                background: "linear-gradient(135deg, #0A5C6B, #0F7A8A)",
+                border: "none", borderRadius: "6px",
+                color: "#F5EDE0",
+                fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.15em",
+                fontSize: "11px", textTransform: "uppercase",
+                cursor: "pointer",
+                boxShadow: "0 0 12px rgba(15,122,138,0.3)",
+              }}
             >
-              Сохранить
+              Подтвердить
             </button>
           </div>
         </div>
@@ -179,38 +235,41 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
 
       {/* Post-game overlay */}
       {phase === "game-over" && coachReport && (
-        <PostGameCoach
-          locale={locale}
-          report={coachReport}
-          shotMarks={botShots}
-          onPlayAgain={resetGame}
-        />
+        <PostGameCoach locale={locale} report={coachReport} shotMarks={botShots} onPlayAgain={resetGame} />
       )}
 
-      <div className="mx-auto w-full max-w-7xl space-y-4">
-        {/* Game header */}
-        <header className="rounded-2xl border border-[#C9AA88] bg-[#F0E6D8] p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }} className="space-y-3">
+        {/* Header */}
+        <div style={{ ...panelStyle, padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <h1 className="text-xl font-extrabold text-[#8B5A2B]">REIS — Морской бой</h1>
-              <p className="mt-0.5 text-sm text-[#6B4C30]">
-                {phase === "placement" && "Расставьте флот и начните сражение"}
-                {phase === "battle" && (playerTurn ? "⚔ Ваш ход — атакуйте!" : isBotThinking ? "🤔 Бот думает…" : "Ход противника")}
-                {phase === "game-over" && (winner === "player" ? "🏆 Победа! Флот противника потоплен." : "💀 Поражение. Флот разгромлен.")}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                <Target style={{ width: "14px", height: "14px", color: "#0F7A8A" }} />
+                <span style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.15em", color: "#B0A080" }}>
+                  КОМАНДНЫЙ МОСТИК
+                </span>
+              </div>
+              <p style={{ fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em", fontSize: "15px", color: phaseColor }}>
+                {phaseLabel}
               </p>
-              {phase === "battle" && <p className="text-xs text-[#9E7B5A]">Ход {turnNumber}</p>}
+              {phase === "battle" && (
+                <p style={{ fontSize: "12px", fontFamily: "monospace", color: "#B0A080", marginTop: "2px" }}>
+                  ХОД №{turnNumber}
+                </p>
+              )}
             </div>
             <AuthButton />
           </div>
-        </header>
+        </div>
 
-        <section className="grid gap-4 xl:grid-cols-[300px_1fr_1fr]">
+        {/* Main grid */}
+        <div style={{ display: "grid", gap: "12px" }} className="xl:grid-cols-[280px_1fr_1fr]">
           {/* Sidebar */}
-          <aside className="space-y-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {/* Fleet panel */}
-            <div className="rounded-2xl border border-[#C9AA88] bg-[#F0E6D8] p-4 shadow-sm">
-              <h2 className="mb-3 text-sm font-bold text-[#5A3A1A]">Флотилия</h2>
-              <div className="space-y-2">
+            <div style={panelStyle}>
+              <div style={panelHeaderStyle}>Флотилия командира</div>
+              <div style={{ padding: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
                 {playerFleet.map((ship) => {
                   const Icon = SHIP_ICONS[ship.kind];
                   const placed = ship.isPlaced;
@@ -220,22 +279,27 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
                       draggable={phase === "placement"}
                       onDragStart={() => setDragShipId(ship.instanceId)}
                       type="button"
-                      className={`w-full rounded-xl border p-2.5 text-left transition ${
-                        placed
-                          ? "border-[#8B5A2B]/40 bg-[#8B5A2B]/10"
-                          : "border-[#C9AA88] bg-[#F8F1E9] hover:border-[#8B5A2B]/40"
-                      }`}
+                      style={{
+                        width: "100%",
+                        padding: "8px 10px",
+                        background: placed ? "rgba(15,122,138,0.12)" : "rgba(28,24,20,0.7)",
+                        border: placed ? "1px solid rgba(15,122,138,0.35)" : "1px solid rgba(63,50,40,0.8)",
+                        borderRadius: "6px",
+                        cursor: phase === "placement" ? "grab" : "default",
+                        textAlign: "left",
+                        transition: "all 0.15s",
+                      }}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-20 shrink-0 ${placed ? "opacity-60" : ""}`}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "64px", flexShrink: 0, opacity: placed ? 0.7 : 1 }}>
                           <Icon />
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-[#2C1A0E]">{ship.name}</p>
-                          <p className="text-xs text-[#8B6B4A]">
-                            {ship.size} {ship.size === 1 ? "клетка" : "клетки"}
-                            {" · "}
-                            {placed ? <span className="text-[#6B8B2B]">✓ размещён</span> : "перетащите"}
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: "13px", fontWeight: 700, fontFamily: "monospace", color: "#D4B78F", letterSpacing: "0.05em" }}>
+                            {ship.name}
+                          </p>
+                          <p style={{ fontSize: "11px", fontFamily: "monospace", color: placed ? "#0F7A8A" : "#9A8A68" }}>
+                            {ship.size} ячейки{placed ? " · РАЗМЕЩЁН" : " · перетащить"}
                           </p>
                         </div>
                       </div>
@@ -245,50 +309,105 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
               </div>
 
               {/* Controls */}
-              <div className="mt-3 space-y-2">
+              <div style={{ padding: "0 10px 10px", display: "flex", flexDirection: "column", gap: "6px" }}>
                 <button
                   type="button"
                   onClick={toggleOrientation}
                   disabled={phase !== "placement"}
-                  className="w-full rounded-xl border border-[#C9AA88] bg-[#F8F1E9] px-3 py-2 text-sm font-semibold text-[#5A3A1A] transition hover:bg-[#E8D5BB] disabled:opacity-40"
+                  style={{
+                    padding: "8px",
+                    background: "rgba(28,24,20,0.8)",
+                    border: "1px solid rgba(63,50,40,0.8)",
+                    borderRadius: "6px",
+                    color: "#C0A880",
+                    fontFamily: "monospace",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    opacity: phase !== "placement" ? 0.4 : 1,
+                  }}
                 >
-                  Поворот: {orientation === "horizontal" ? "↔ Горизонтально" : "↕ Вертикально"}
+                  ПОВОРОТ: {orientation === "horizontal" ? "ГОРИЗОНТ" : "ВЕРТИКАЛЬ"}
                 </button>
                 <button
                   type="button"
                   onClick={autoPlacePlayerFleet}
                   disabled={phase !== "placement"}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#8B5A2B] px-3 py-2 text-sm font-bold text-[#F5EDE4] transition hover:bg-[#6B4020] disabled:opacity-40"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                    padding: "8px",
+                    background: "rgba(15,122,138,0.15)",
+                    border: "1px solid rgba(15,122,138,0.35)",
+                    borderRadius: "6px",
+                    color: "#0F7A8A",
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    cursor: "pointer",
+                    opacity: phase !== "placement" ? 0.4 : 1,
+                  }}
                 >
-                  <Shuffle className="h-4 w-4" />
-                  Авторасстановка
+                  <Shuffle style={{ width: "12px", height: "12px" }} />
+                  АВТОРАССТАНОВКА
                 </button>
                 <button
                   type="button"
                   onClick={startBattle}
                   disabled={!allPlaced || phase !== "placement"}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#E8B923] px-3 py-2 text-sm font-bold text-[#2C1A0E] transition hover:bg-[#D4A510] disabled:opacity-40"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                    padding: "10px",
+                    background: allPlaced && phase === "placement"
+                      ? "linear-gradient(135deg, #8B6010, #D4A020)"
+                      : "rgba(44,36,27,0.5)",
+                    border: "1px solid rgba(212,183,143,0.3)",
+                    borderRadius: "6px",
+                    color: allPlaced && phase === "placement" ? "#1C1814" : "#5A4A30",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    letterSpacing: "0.15em",
+                    cursor: allPlaced && phase === "placement" ? "pointer" : "not-allowed",
+                    boxShadow: allPlaced && phase === "placement" ? "0 0 14px rgba(212,160,32,0.3)" : "none",
+                  }}
                 >
-                  <Swords className="h-4 w-4" />
-                  Начать бой!
+                  <Swords style={{ width: "14px", height: "14px" }} />
+                  В БОЙ!
                 </button>
               </div>
 
-              {/* Bot difficulty */}
-              <div className="mt-3 rounded-xl border border-[#C9AA88] bg-[#F8F1E9] p-3">
-                <p className="mb-2 text-xs font-semibold text-[#8B6B4A]">Сложность противника</p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {botOptions.map((opt) => (
+              {/* Difficulty */}
+              <div style={{
+                margin: "0 10px 10px",
+                padding: "8px",
+                background: "rgba(28,24,20,0.6)",
+                border: "1px solid rgba(63,50,40,0.6)",
+                borderRadius: "6px",
+              }}>
+                <p style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.15em", color: "#B0A080", marginBottom: "6px" }}>
+                  УРОВЕНЬ ПРОТИВНИКА
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px" }}>
+                  {BOT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
                       disabled={phase !== "placement"}
                       onClick={() => setBotLevel(opt.value)}
-                      className={`rounded-lg py-1 text-xs font-bold transition ${
-                        botLevel === opt.value
-                          ? "bg-[#8B5A2B] text-[#F5EDE4]"
-                          : "bg-[#E8D5BB] text-[#5A3A1A] hover:bg-[#D4C0A0]"
-                      }`}
+                      style={{
+                        padding: "6px 2px",
+                        background: botLevel === opt.value ? "rgba(15,122,138,0.25)" : "transparent",
+                        border: botLevel === opt.value ? "1px solid rgba(15,122,138,0.5)" : "1px solid rgba(63,50,40,0.6)",
+                        borderRadius: "4px",
+                        color: botLevel === opt.value ? "#1AAFBF" : "#9A8A68",
+                        fontFamily: "monospace",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        cursor: "pointer",
+                      }}
                     >
                       {opt.label}
                     </button>
@@ -296,36 +415,58 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
+              {/* New game / Multiplayer */}
+              <div style={{ padding: "0 10px 10px", display: "flex", flexDirection: "column", gap: "6px" }}>
                 <button
                   type="button"
                   onClick={resetGame}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#C9AA88] px-3 py-2 text-sm font-semibold text-[#8B3A2B] transition hover:bg-[#8B3A2B]/10"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                    padding: "7px",
+                    background: "transparent",
+                    border: "1px solid rgba(139,34,34,0.4)",
+                    borderRadius: "6px",
+                    color: "#FF8A8A",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    cursor: "pointer",
+                    opacity: 0.8,
+                  }}
                 >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Новая игра
+                  <RotateCcw style={{ width: "12px", height: "12px" }} />
+                  НОВАЯ ИГРА
                 </button>
                 <Link
                   href={`/${locale}/game?createRoom=1`}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#C9AA88] px-3 py-2 text-sm font-semibold text-[#2B5A8B] transition hover:bg-[#2B5A8B]/10"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                    padding: "7px",
+                    background: "transparent",
+                    border: "1px solid rgba(15,122,138,0.3)",
+                    borderRadius: "6px",
+                    color: "#1AAFBF",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                    textDecoration: "none",
+                  }}
                 >
-                  <Users className="h-3.5 w-3.5" />
-                  Играть с другом
+                  <Users style={{ width: "11px", height: "11px" }} />
+                  ИГРАТЬ С ДРУГОМ
                 </Link>
               </div>
             </div>
 
-            {/* AI Coach Panel */}
-            <AICoachPanel
-              botLevel={botLevel}
-              playerAimHeatmap={[]}
-              botAimHeatmap={[]}
-            />
-          </aside>
+            {/* AI Coach */}
+            <AICoachPanel botLevel={botLevel} playerAimHeatmap={[]} botAimHeatmap={[]} />
+          </div>
 
           {/* Player board */}
           <Board
-            title="Моя флотилия"
+            title="МОЯ ФЛОТИЛИЯ"
             marks={playerShots}
             ships={playerFleet}
             revealShips
@@ -336,16 +477,16 @@ const SoloGameClient = ({ locale }: { locale: Locale }) => {
             }
           />
 
-          {/* Enemy board — NO heatmap during battle (only post-game via PostGameCoach) */}
+          {/* Enemy board */}
           <Board
-            title={isBotThinking ? "Доска противника • Бот думает…" : "Доска противника"}
+            title={isBotThinking ? "ДОСКА ПРОТИВНИКА — ДУМАЕТ…" : "ДОСКА ПРОТИВНИКА"}
             marks={botShots}
             ships={botFleet}
             heatmap={[]}
             interactive={phase === "battle" && playerTurn}
             onCellClick={phase === "battle" && playerTurn ? fireAtBot : undefined}
           />
-        </section>
+        </div>
       </div>
     </main>
   );

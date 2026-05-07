@@ -6,6 +6,15 @@ import { createClient } from "@/supabase/client";
 import { getProfile, syncToSupabase } from "@/lib/profile-service";
 import { AuthModal } from "@/components/auth-modal";
 
+const btnBase: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: "5px",
+  padding: "5px 10px",
+  fontFamily: "monospace", fontSize: "11px", fontWeight: 700,
+  letterSpacing: "0.1em", textTransform: "uppercase" as const,
+  borderRadius: "5px", cursor: "pointer", border: "none",
+  transition: "all 0.15s",
+};
+
 export function AuthButton() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -20,63 +29,42 @@ export function AuthButton() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      setLoading(false);
-    });
-
+    supabase.auth.getUser().then(({ data: { user } }) => { setUser(user); setLoading(false); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const prev = user;
       const current = session?.user ?? null;
       setUser(current);
-      if (event === "SIGNED_IN" && current && !prev) {
-        setTimeout(syncLocalProgress, 500);
-      }
+      if (event === "SIGNED_IN" && current && !prev) setTimeout(syncLocalProgress, 500);
     });
-
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
+  if (loading) return (
+    <div style={{ ...btnBase, background: "rgba(28,24,20,0.8)", border: "1px solid rgba(63,50,40,0.8)", color: "#6A5A4A" }}>
+      <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#3F3228", animation: "pulse 1s infinite" }} />
+      …
+    </div>
+  );
 
-  if (loading) {
-    return (
-      <div className="inline-flex items-center gap-1 rounded-full border border-[#C9AA88] bg-[#F0E6D8] px-3 py-1.5 text-xs font-semibold text-[#8B6B4A]">
-        <div className="h-3 w-3 animate-pulse rounded-full bg-[#C9AA88]" />
-        …
+  if (user) return (
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div style={{ ...btnBase, background: "rgba(15,122,138,0.15)", border: "1px solid rgba(15,122,138,0.3)", color: "#0F7A8A", cursor: "default" }}>
+        <User style={{ width: "10px", height: "10px" }} />
+        {user.user_metadata?.full_name?.split(" ")[0] ?? user.email?.split("@")[0] ?? "ОФИЦЕР"}
+        {syncing && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#0F7A8A" }} />}
       </div>
-    );
-  }
-
-  if (user) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-[#8B5A2B]/40 bg-[#8B5A2B]/10 px-3 py-1.5 text-xs font-semibold text-[#5A3A1A]">
-          <User className="h-3.5 w-3.5 text-[#8B5A2B]" />
-          {user.user_metadata?.full_name?.split(" ")[0] ?? user.email?.split("@")[0] ?? "User"}
-          {syncing && <span className="h-2 w-2 animate-pulse rounded-full bg-[#8B5A2B]" />}
-        </div>
-        <button
-          onClick={handleSignOut}
-          className="inline-flex items-center gap-1 rounded-full border border-[#C9AA88] px-3 py-1.5 text-xs font-semibold text-[#6B4C30] transition hover:bg-[#8B5A2B]/10"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          Выйти
-        </button>
-      </div>
-    );
-  }
+      <button onClick={() => supabase.auth.signOut()} style={{ ...btnBase, background: "transparent", border: "1px solid rgba(63,50,40,0.8)", color: "#8A7A6A" }}>
+        <LogOut style={{ width: "10px", height: "10px" }} />
+        Выход
+      </button>
+    </div>
+  );
 
   return (
     <>
-      <button
-        onClick={() => setShowModal(true)}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5A2B] px-3 py-1.5 text-xs font-bold text-[#F5EDE4] transition hover:bg-[#6B4020]"
-      >
-        <LogIn className="h-3.5 w-3.5" />
+      <button onClick={() => setShowModal(true)} style={{ ...btnBase, background: "linear-gradient(135deg, #0A5C6B, #0F7A8A)", color: "#F5EDE0", boxShadow: "0 0 10px rgba(15,122,138,0.25)" }}>
+        <LogIn style={{ width: "10px", height: "10px" }} />
         Войти
       </button>
       {showModal && <AuthModal onClose={() => setShowModal(false)} />}

@@ -1,8 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F5EDE4;
-  --foreground: #2C1A0E;
+  --bg-primary: #1C1814;
+  --bg-panel: #2C241B;
+  --bg-deep: #25201A;
+  --border-grid: #3F3228;
+  --border-gold: rgba(212,183,143,0.18);
+  --teal: #0A5C6B;
+  --teal-bright: #0F7A8A;
+  --gold: #D4B78F;
+  --gold-bright: #E8C97F;
+  --text: #F5EDE0;
+  --text-secondary: #D4B78F;
+  --text-muted: #8A7A6A;
+  --hit: #FF4D4D;
+  --sunk: #FFAA00;
+  --miss: #A8B5C0;
+  --background: #1C1814;
+  --foreground: #F5EDE0;
 }
 
 @theme inline {
@@ -13,11 +28,44 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #E8D5BB; }
-::-webkit-scrollbar-thumb { background: #8B5A2B; border-radius: 3px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb { background: #5A4530; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+@keyframes hitFlash {
+  0%   { transform: scale(0.2); opacity: 0; filter: brightness(3); }
+  40%  { transform: scale(1.3); opacity: 1; filter: brightness(2); }
+  100% { transform: scale(1);   opacity: 1; filter: brightness(1); }
+}
+
+@keyframes sunkPulse {
+  0%,100% { box-shadow: 0 0 8px rgba(255,170,0,0.5); }
+  50%      { box-shadow: 0 0 18px rgba(255,170,0,0.9), 0 0 40px rgba(255,170,0,0.3); }
+}
+
+@keyframes scanline {
+  0%   { transform: translateY(-2px); opacity: 0.06; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.panel-glass {
+  background: rgba(44,36,27,0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(212,183,143,0.12);
+  box-shadow: inset 0 1px 0 rgba(212,183,143,0.07), 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.tactical-border {
+  border: 1px solid rgba(63,50,40,0.9);
+}

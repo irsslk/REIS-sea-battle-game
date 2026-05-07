@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import { localeLabels, locales, Locale } from "@/lib/i18n";
 
 export const LanguageSwitcher = ({ currentLocale }: { currentLocale: Locale }) => {
@@ -15,16 +14,31 @@ export const LanguageSwitcher = ({ currentLocale }: { currentLocale: Locale }) =
   };
 
   return (
-    <div className="flex items-center gap-0.5 rounded-full border border-[#C9AA88] bg-[#F0E6D8] p-0.5">
+    <div style={{
+      display: "flex", alignItems: "center", gap: "2px",
+      padding: "3px",
+      background: "rgba(28,24,20,0.8)",
+      border: "1px solid rgba(63,50,40,0.8)",
+      borderRadius: "6px",
+    }}>
       {locales.map((locale) => (
         <Link
           key={locale}
           href={getLocalePath(locale)}
-          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-            locale === currentLocale
-              ? "bg-[#8B5A2B] text-[#F5EDE4]"
-              : "text-[#6B4C30] hover:bg-[#8B5A2B]/20"
-          }`}
+          style={{
+            padding: "3px 8px",
+            borderRadius: "4px",
+            fontSize: "11px",
+            fontFamily: "monospace",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textDecoration: "none",
+            transition: "all 0.15s",
+            ...(locale === currentLocale
+              ? { background: "rgba(15,122,138,0.25)", color: "#0F7A8A", border: "1px solid rgba(15,122,138,0.4)" }
+              : { color: "#8A7A6A", border: "1px solid transparent" }
+            ),
+          }}
         >
           {localeLabels[locale]}
         </Link>
