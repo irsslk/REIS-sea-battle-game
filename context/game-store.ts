@@ -305,7 +305,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       const playerDead = areAllShipsSunk(playerFleet);
       const winner = playerDead ? "bot" : null;
-      const nextLog = [...mutable.log, { by: "bot", coord: target, result: outcome.result }];
+      const nextLog = [...mutable.log, { by: "bot" as const, coord: target, result: outcome.result as "miss" | "hit" | "sunk" }];
       mutable = {
         ...mutable,
         ships: [...playerFleet, ...botFleet],

@@ -158,7 +158,7 @@ export const MultiplayerGameClient = ({ locale, initialRoomCode, createRoom }: M
         return;
       }
       setMyFleet(mutableFleet);
-      setLog((prev) => [...prev, { by: "bot", coord: { x: payload.x, y: payload.y }, result: outcome.result }]);
+      setLog((prev) => [...prev, { by: "bot" as const, coord: { x: payload.x, y: payload.y }, result: outcome.result as "miss" | "hit" | "sunk" }]);
       setMyMarks((prev) => {
         const next = prev.map((row) => [...row]);
         if (outcome.result === "miss") next[payload.y][payload.x] = "miss";
